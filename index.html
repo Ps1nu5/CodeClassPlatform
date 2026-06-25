@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeClass — вход</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-bg">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="brand" style="justify-content:center; margin-bottom:18px; font-size:1.4rem;">
+        <span class="logo mono">&lt;/&gt;</span> CodeClass
+      </div>
+
+      <div class="card">
+        <h2 class="mt-0">Вход в кабинет</h2>
+        <p class="muted" style="margin-top:-4px;">Учебная платформа по программированию</p>
+
+        <form id="loginForm" style="margin-top:18px;">
+          <div class="field">
+            <label for="login">Логин</label>
+            <input class="input" id="login" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="password">Пароль</label>
+            <input class="input" id="password" type="password" autocomplete="current-password" required>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Войти</button>
+          <div class="error" id="err"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/mock.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Уже вошли? — сразу в кабинет
+    const existing = api.getSession();
+    if (existing) location.replace(ROLE_HOME[existing.role] || "index.html");
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const err = document.getElementById("err");
+      err.textContent = "";
+      try {
+        const user = await api.login(
+          document.getElementById("login").value.trim(),
+          document.getElementById("password").value
+        );
+        location.replace(ROLE_HOME[user.role] || "index.html");
+      } catch (ex) {
+        err.textContent = ex.message;
+      }
+    });
+  </script>
+</body>
+</html>

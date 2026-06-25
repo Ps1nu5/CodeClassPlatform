@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeClass — кабинет родителя</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-bg">
+  <div class="container">
+    <div class="topbar">
+      <div class="brand"><span class="logo mono">&lt;/&gt;</span> CodeClass <span class="badge" style="margin-left:6px;">родитель</span></div>
+      <div class="userchip" id="userchip"></div>
+    </div>
+
+    <h1 id="hello">Кабинет родителя</h1>
+    <p class="muted" id="course" style="margin-top:-6px;"></p>
+
+    <!-- Метрики -->
+    <div class="grid cols-3" style="margin-top:18px;">
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> Оплачено занятий</div>
+        <div class="metric warn"><span class="big" id="m-left">—</span><span class="unit">осталось</span></div>
+        <div class="progress"><span id="m-progress" style="width:0%"></span></div>
+        <div class="muted" id="m-paid" style="font-size:.82rem; margin-top:8px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> Следующий урок</div>
+        <div id="next-lesson"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> Домашка к сдаче</div>
+        <div class="metric accent"><span class="big" id="m-hw">—</span><span class="unit">открыто</span></div>
+        <div class="muted" id="m-hw-next" style="font-size:.82rem; margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- Обратная связь от преподавателя -->
+    <div class="section-title"><h2 class="mb-0">Обратная связь от преподавателя</h2></div>
+    <div class="list" id="fb-list"></div>
+
+    <!-- Расписание -->
+    <div class="section-title"><h2 class="mb-0">Расписание</h2></div>
+    <div class="list" id="lessons-list"></div>
+
+    <!-- Домашние задания -->
+    <div class="section-title"><h2 class="mb-0">Домашние задания</h2></div>
+    <div class="list" id="hw-list"></div>
+
+    <div style="height:40px;"></div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/mock.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/parent.js"></script>
+</body>
+</html>

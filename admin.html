@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeClass — админка</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-bg">
+  <div class="container">
+    <div class="topbar">
+      <div class="brand"><span class="logo mono">&lt;/&gt;</span> CodeClass <span class="badge" style="margin-left:6px;">админ</span></div>
+      <div class="userchip" id="userchip"></div>
+    </div>
+
+    <div class="grid cols-2" style="grid-template-columns: 340px 1fr; align-items:start;">
+
+      <!-- Левая колонка: список + создание -->
+      <div class="stack">
+        <div class="card">
+          <div class="flex between" style="margin-bottom:12px;">
+            <h2 class="mb-0">Ученики</h2>
+            <button class="btn btn-primary btn-sm" id="btn-new">+ Новый</button>
+          </div>
+          <div class="list" id="students-list"></div>
+        </div>
+
+        <!-- Форма создания (скрыта по умолчанию) -->
+        <div class="card" id="new-form" style="display:none;">
+          <h3 class="mt-0">Новый ученик</h3>
+          <div class="field"><label>Имя ученика</label><input class="input" id="n-name" placeholder="Иван Петров"></div>
+          <div class="field"><label>Курс</label><input class="input" id="n-course" placeholder="Python для начинающих"></div>
+          <div class="field"><label>Оплачено занятий</label><input class="input" id="n-paid" type="number" min="0" value="8"></div>
+          <hr style="border:none; border-top:1px dashed var(--line); margin:14px 0;">
+          <div class="field">
+            <label>Логин ученика</label>
+            <input class="input mono" id="n-login" placeholder="ivan">
+            <div class="muted" style="font-size:.8rem; margin-top:6px;">
+              Логин родителя: <span class="mono" id="n-parent-preview">—</span>
+            </div>
+          </div>
+          <div class="field"><label>Пароль (общий для ученика и родителя)</label><input class="input mono" id="n-pass"></div>
+          <div class="flex" style="gap:8px;">
+            <button class="btn btn-ghost btn-sm" type="button" id="n-gen">Сгенерировать пароль</button>
+          </div>
+          <button class="btn btn-primary btn-block" id="n-create" style="margin-top:14px;">Создать</button>
+          <div class="error" id="n-err"></div>
+        </div>
+      </div>
+
+      <!-- Правая колонка: детали выбранного ученика -->
+      <div id="detail">
+        <div class="card"><p class="muted mb-0">Выберите ученика слева или создайте нового.</p></div>
+      </div>
+
+    </div>
+    <div style="height:40px;"></div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/mock.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
