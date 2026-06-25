@@ -92,7 +92,7 @@
         <!-- Домашки -->
         <div class="card">
           <div class="card-title"><span class="dot"></span> Домашние задания</div>
-          <div class="list" id="adm-hw">${homeworks.map(hwRow).join("") || `<p class="muted">Нет домашек.</p>`}</div>
+          <div class="list" id="adm-hw">${renderHwList(homeworks)}</div>
           <div class="stack" style="gap:8px; margin-top:12px;">
             <input class="input" id="h-title" placeholder="Название задания">
             <input class="input" id="h-desc" placeholder="Описание">
@@ -150,12 +150,39 @@
   }
 
   function hwRow(h) {
-    const badge = h.status === "done" ? `<span class="badge ok">сдано</span>` : `<span class="badge warn">до ${fmtDate(h.due)}</span>`;
+    if (h.status === "done") {
+      return `
+        <div class="row done">
+          <div class="main"><div class="t">${h.title}</div><div class="s">${h.desc}</div></div>
+          <span class="badge ok">сдано</span>
+        </div>`;
+    }
+    const overdue = new Date(h.due) < new Date();
+    const badge = overdue
+      ? `<span class="badge danger">просрочено</span>`
+      : `<span class="badge warn">до ${fmtDate(h.due)}</span>`;
     return `
-      <div class="row ${h.status === "done" ? "done" : ""}">
+      <div class="row">
         <div class="main"><div class="t">${h.title}</div><div class="s">${h.desc}</div></div>
         ${badge}
+        <button class="btn btn-ghost btn-sm" data-hwdone="${h.id}">Выполнено</button>
       </div>`;
+  }
+
+  // По умолчанию видны только невыполненные; выполненные — под спойлером.
+  function renderHwList(homeworks) {
+    const open = homeworks.filter(h => h.status !== "done");
+    const done = homeworks.filter(h => h.status === "done");
+    const openHtml = open.length
+      ? open.map(hwRow).join("")
+      : `<p class="muted">Невыполненных домашек нет.</p>`;
+    const doneHtml = done.length
+      ? `<details class="fb-history">
+           <summary>Выполненные (${done.length})</summary>
+           <div class="fb-history-body">${done.map(hwRow).join("")}</div>
+         </details>`
+      : "";
+    return openHtml + doneHtml;
   }
 
   function wireDetail() {
@@ -171,6 +198,10 @@
     // отметить урок проведённым
     document.querySelectorAll("[data-done]").forEach(b =>
       b.addEventListener("click", async () => { await api.markLessonDone(b.dataset.done); render(); }));
+
+    // отметить домашку выполненной
+    document.querySelectorAll("[data-hwdone]").forEach(b =>
+      b.addEventListener("click", async () => { await api.markHomeworkDone(b.dataset.hwdone); render(); }));
 
     // добавить урок
     document.getElementById("l-add").addEventListener("click", async () => {

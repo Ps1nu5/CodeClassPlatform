@@ -109,6 +109,12 @@ const api = (() => {
       if (l) { l.status = "done"; saveDB(db); }
     },
 
+    async markHomeworkDone(homeworkId) {
+      const db = loadDB();
+      const h = db.homeworks.find(x => x.id === homeworkId);
+      if (h) { h.status = "done"; saveDB(db); }
+    },
+
     async addHomework(studentId, title, desc, due) {
       const db = loadDB();
       db.homeworks.push({ id: "h" + Date.now(), studentId, title, desc, due, status: "open" });
@@ -209,6 +215,11 @@ const api = (() => {
 
     async markLessonDone(lessonId) {
       const { error } = await sb.from("lessons").update({ status: "done" }).eq("id", lessonId);
+      must(error);
+    },
+
+    async markHomeworkDone(homeworkId) {
+      const { error } = await sb.from("homeworks").update({ status: "done" }).eq("id", homeworkId);
       must(error);
     },
 
