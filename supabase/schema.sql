@@ -51,9 +51,12 @@ create table if not exists public.feedback (
   text          text not null,
   understanding int check (understanding between 1 and 10),
   independence  int check (independence  between 1 and 10),
+  homework      int check (homework      between 1 and 10),
   engagement    int check (engagement    between 1 and 10),
   created_at    timestamptz not null default now()
 );
+-- для баз, созданных до добавления метрики «домашние задания»:
+alter table public.feedback add column if not exists homework int check (homework between 1 and 10);
 
 create index if not exists idx_lessons_student   on public.lessons(student_id);
 create index if not exists idx_homeworks_student on public.homeworks(student_id);

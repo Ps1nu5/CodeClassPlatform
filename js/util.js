@@ -32,6 +32,7 @@ function relDays(iso) {
 const FEEDBACK_METRICS = [
   { key: "understanding", label: "Понимание материала" },
   { key: "independence",  label: "Самостоятельность" },
+  { key: "homework",      label: "Домашние задания" },
   { key: "engagement",    label: "Вовлечённость" },
 ];
 

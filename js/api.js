@@ -126,6 +126,17 @@ const api = (() => {
       db.feedback.push({ id: "f" + Date.now(), studentId, date: new Date().toISOString(), text, scores: scores || null });
       saveDB(db);
     },
+
+    // Локальный черновик ОС без нейронки (мок-режим).
+    async generateFeedback(scores) {
+      const s = scores || {};
+      const word = v => v >= 9 ? "отлично" : v >= 7 ? "хорошо" : v >= 5 ? "средне" : "пока слабо";
+      return {
+        text: `Понимание — ${word(s.understanding)}, самостоятельность — ${word(s.independence)}, ` +
+              `домашние задания — ${word(s.homework)}, вовлечённость — ${word(s.engagement)}. ` +
+              `(Черновик мок-режима, нейронка отключена.)`,
+      };
+    },
   };
 
   // ============ SUPABASE-РЕАЛИЗАЦИЯ ============
@@ -134,7 +145,8 @@ const api = (() => {
   const mapLesson  = r => ({ id: r.id, studentId: r.student_id, date: r.date, topic: r.topic, status: r.status });
   const mapHw      = r => ({ id: r.id, studentId: r.student_id, title: r.title, desc: r.description, due: r.due, status: r.status });
   const mapFb      = r => ({ id: r.id, studentId: r.student_id, date: r.created_at, text: r.text,
-                             scores: { understanding: r.understanding, independence: r.independence, engagement: r.engagement } });
+                             scores: { understanding: r.understanding, independence: r.independence,
+                                       homework: r.homework, engagement: r.engagement } });
 
   function must(error) { if (error) throw new Error(error.message || "Ошибка запроса"); }
 
@@ -232,9 +244,33 @@ const api = (() => {
       const s = scores || {};
       const { error } = await sb.from("feedback").insert({
         student_id: studentId, text,
-        understanding: s.understanding, independence: s.independence, engagement: s.engagement,
+        understanding: s.understanding, independence: s.independence,
+        homework: s.homework, engagement: s.engagement,
       });
       must(error);
+    },
+
+    // Генерация черновика ОС нейронкой — через Edge Function generate-feedback.
+    // scores = { understanding, independence, engagement, hint? }. Возвращает { text }.
+    async generateFeedback(scores) {
+      // Локальная разработка: до деплоя функции ходим в dev_server.py.
+      if (["localhost", "127.0.0.1"].includes(location.hostname)) {
+        const r = await fetch("/dev/generate-feedback", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(scores),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || d.error) throw new Error(d.error || `Локальный сервер: ${r.status}`);
+        return d;
+      }
+      const { data, error } = await sb.functions.invoke("generate-feedback", { body: scores });
+      if (error) {
+        let msg = error.message || "Не удалось сгенерировать обратную связь";
+        try { const b = await error.context.json(); if (b && b.error) msg = b.error; } catch (_) {}
+        throw new Error(msg);
+      }
+      if (data && data.error) throw new Error(data.error);
+      return data;
     },
   };
 

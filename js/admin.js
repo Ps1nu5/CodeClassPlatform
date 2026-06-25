@@ -118,7 +118,12 @@
                 </div>`).join("")}
             </div>
             <textarea class="input" id="fb-text" rows="3" placeholder="Например: Артём хорошо освоил циклы, но дома не делал домашку. Рекомендую закрепить тему списков."></textarea>
-            <div><button class="btn btn-primary btn-sm" id="fb-add">Отправить родителю</button></div>
+            <div class="flex" style="gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" id="fb-gen">✨ Сгенерировать ОС</button>
+              <button class="btn btn-primary btn-sm" id="fb-add">Отправить родителю</button>
+              <span class="muted" style="font-size:.8rem;">черновик от нейронки можно отредактировать</span>
+            </div>
+            <div class="error" id="fb-err"></div>
           </div>
         </div>
       </div>`;
@@ -230,6 +235,31 @@
         val.textContent = sl.value;
         val.style.color = scoreColor(+sl.value);
       });
+    });
+
+    // сгенерировать черновик ОС нейронкой по выставленным баллам
+    document.getElementById("fb-gen").addEventListener("click", async () => {
+      const btn = document.getElementById("fb-gen");
+      const err = document.getElementById("fb-err");
+      const textEl = document.getElementById("fb-text");
+      err.textContent = "";
+      const scores = {};
+      FEEDBACK_METRICS.forEach(m => { scores[m.key] = +document.getElementById("fb-" + m.key).value; });
+      const note = textEl.value.trim();
+      if (note) scores.hint = note;  // текст в поле трактуем как подсказку для нейронки
+
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Генерирую…";
+      try {
+        const res = await api.generateFeedback(scores);
+        textEl.value = res.text;
+      } catch (ex) {
+        err.textContent = ex.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
     });
 
     // отправить обратную связь
