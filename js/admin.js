@@ -66,15 +66,15 @@
           </div>
         </div>
 
-        <!-- Управление оплаченными занятиями -->
+        <!-- Управление занятиями: в поле — ОСТАЛОСЬ (с учётом проведённых) -->
         <div class="card tight">
-          <div class="card-title"><span class="dot"></span> Оплаченные занятия</div>
+          <div class="card-title"><span class="dot"></span> Осталось занятий</div>
           <div class="flex" style="gap:8px;">
             <button class="btn btn-ghost btn-sm" data-paid="-1">−1</button>
-            <input class="input mono" id="paid-input" type="number" min="0" value="${s.lessonsPaid}" style="width:90px; text-align:center;">
+            <input class="input mono" id="paid-input" type="number" min="0" value="${left}" style="width:90px; text-align:center;">
             <button class="btn btn-ghost btn-sm" data-paid="+1">+1</button>
             <button class="btn btn-primary btn-sm" id="paid-save">Сохранить</button>
-            <span class="muted" style="font-size:.82rem;">списываются автоматически при отметке урока «проведён»</span>
+            <span class="muted" style="font-size:.82rem;">всего оплачено: ${s.lessonsPaid} · списываются автоматически при отметке «проведён»</span>
           </div>
         </div>
 
@@ -128,7 +128,7 @@
         </div>
       </div>`;
 
-    wireDetail();
+    wireDetail(used);
   }
 
   function lessonRow(l) {
@@ -190,13 +190,13 @@
     return openHtml + doneHtml;
   }
 
-  function wireDetail() {
-    // оплаченные занятия
+  function wireDetail(used) {
+    // в поле — ОСТАЛОСЬ занятий; всего оплачено = осталось + уже проведённые
     const input = document.getElementById("paid-input");
     document.querySelectorAll("[data-paid]").forEach(b =>
       b.addEventListener("click", () => { input.value = Math.max(0, (+input.value || 0) + (b.dataset.paid === "+1" ? 1 : -1)); }));
     document.getElementById("paid-save").addEventListener("click", async () => {
-      await api.setLessonsPaid(selectedId, +input.value || 0);
+      await api.setLessonsPaid(selectedId, (+input.value || 0) + used);
       render();
     });
 

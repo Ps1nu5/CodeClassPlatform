@@ -74,10 +74,12 @@ h3 { font-size: 1.02rem; }
   font-weight: 800; font-size: 1.15rem; letter-spacing: -.02em;
 }
 .brand .logo {
+  flex: none;                    /* не сжимать в flex-контейнере */
   width: 34px; height: 34px; border-radius: 10px;
   background: linear-gradient(135deg, var(--brand), var(--accent));
   display: grid; place-items: center; color: #fff; font-family: var(--mono);
   font-weight: 800; box-shadow: var(--shadow-sm);
+  font-size: 1rem; line-height: 1; /* фикс размера: не зависит от размера .brand */
 }
 .userchip {
   display: flex; align-items: center; gap: 10px;
@@ -106,7 +108,7 @@ h3 { font-size: 1.02rem; }
 .card.tight { padding: 16px 18px; }
 
 .card-title {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 6px;
   font-size: .8rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: .06em; color: var(--ink-soft); margin-bottom: 12px;
 }
@@ -131,7 +133,7 @@ h3 { font-size: 1.02rem; }
 
 /* ---------- Бейджи / статусы ---------- */
 .badge {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   font-size: .76rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
   background: var(--brand-50); color: var(--brand-700);
 }
