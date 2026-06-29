@@ -8,6 +8,14 @@
   renderUserChip(document.getElementById("userchip"), user);
 
   let selectedId = null;
+  // что сейчас редактируется инлайн: id урока/домашки или флаг ученика
+  let editing = { lesson: null, hw: null, student: false };
+
+  // экранирование для значений в value="..." (чтобы кавычки не ломали разметку)
+  const attr = s => String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  function resetEditing() { editing = { lesson: null, hw: null, student: false }; }
 
   // ---------- Список учеников ----------
   async function renderStudents() {
@@ -31,7 +39,7 @@
     }));
     box.innerHTML = rows.join("");
     box.querySelectorAll("[data-id]").forEach(el =>
-      el.addEventListener("click", () => { selectedId = el.dataset.id; render(); }));
+      el.addEventListener("click", () => { selectedId = el.dataset.id; resetEditing(); render(); }));
   }
 
   // ---------- Детальная панель ----------
@@ -48,23 +56,37 @@
     const used = api.lessonsUsed(lessons);
     const left = Math.max(0, s.lessonsPaid - used);
 
+    // --- шапка ученика (с инлайн-редактированием) ---
+    const header = editing.student
+      ? `<div class="flex between" style="gap:12px; align-items:flex-start;">
+           <div class="stack" style="gap:8px; flex:1;">
+             <input class="input" id="se-name" value="${attr(s.name)}" placeholder="Имя ученика">
+             <input class="input" id="se-course" value="${attr(s.course)}" placeholder="Курс">
+             <div class="flex" style="gap:8px;">
+               <button class="btn btn-primary btn-sm" id="se-save">Сохранить</button>
+               <button class="btn btn-ghost btn-sm" id="se-canceledit">Отмена</button>
+             </div>
+           </div>
+           <div class="metric warn"><span class="big mono">${left}</span><span class="unit">осталось</span></div>
+         </div>`
+      : `<div class="flex between">
+           <div>
+             <h2 class="mb-0">${s.name}</h2>
+             <div class="muted">${s.course}</div>
+           </div>
+           <div class="metric warn"><span class="big mono">${left}</span><span class="unit">осталось</span></div>
+         </div>
+         <div class="muted" style="margin-top:8px; font-size:.85rem;">
+           Ученик: <span class="mono">${studentLogin || "—"}</span> ·
+           Родитель: <span class="mono">${parentLogin || "—"}</span> ·
+           Проведено ${used} из ${s.lessonsPaid}
+           <button class="btn btn-ghost btn-sm" id="s-edit" style="margin-left:8px;">✎ изменить</button>
+         </div>`;
+
     box.innerHTML = `
       <div class="stack">
         <!-- Шапка ученика -->
-        <div class="card">
-          <div class="flex between">
-            <div>
-              <h2 class="mb-0">${s.name}</h2>
-              <div class="muted">${s.course}</div>
-            </div>
-            <div class="metric warn"><span class="big mono">${left}</span><span class="unit">осталось</span></div>
-          </div>
-          <div class="muted" style="margin-top:8px; font-size:.85rem;">
-            Ученик: <span class="mono">${studentLogin || "—"}</span> ·
-            Родитель: <span class="mono">${parentLogin || "—"}</span> ·
-            Проведено ${used} из ${s.lessonsPaid}
-          </div>
-        </div>
+        <div class="card">${header}</div>
 
         <!-- Управление занятиями: в поле — ОСТАЛОСЬ (с учётом проведённых) -->
         <div class="card tight">
@@ -131,15 +153,36 @@
     wireDetail(used);
   }
 
+  // ---------- Рендер строк ----------
   function lessonRow(l) {
-    const badge = l.status === "done"
+    if (editing.lesson === l.id) {
+      return `
+        <div class="row" style="flex-wrap:wrap; gap:8px;">
+          <input class="input" id="le-topic" value="${attr(l.topic)}" placeholder="Тема урока" style="flex:1; min-width:140px;">
+          <input class="input" id="le-date" type="datetime-local" value="${toLocalInput(l.date)}" style="width:200px;">
+          <button class="btn btn-primary btn-sm" data-lsave="${l.id}">Сохранить</button>
+          <button class="btn btn-ghost btn-sm" data-lcanceledit="1">Отмена</button>
+        </div>`;
+    }
+    const statusBadge = l.status === "done"
       ? `<span class="badge ok">проведён</span>`
-      : `<button class="btn btn-ghost btn-sm" data-done="${l.id}">Отметить проведённым</button>`;
+      : l.status === "canceled"
+        ? `<span class="badge danger">отменён</span>`
+        : `<button class="btn btn-ghost btn-sm" data-done="${l.id}">Провести</button>`;
+    const cancelBtn = l.status === "scheduled"
+      ? `<button class="btn btn-ghost btn-sm" data-lcancel="${l.id}" title="Отменить урок">⊘</button>` : "";
+    const revertBtn = (l.status === "done" || l.status === "canceled")
+      ? `<button class="btn btn-ghost btn-sm" data-lrevert="${l.id}" title="Вернуть в запланированные">↩</button>` : "";
+    const faded = (l.status === "done" || l.status === "canceled") ? "done" : "";
     return `
-      <div class="row ${l.status === "done" ? "done" : ""}">
+      <div class="row ${faded}">
         <div class="when">${fmtDate(l.date)}<br><span class="muted" style="font-weight:400;">${fmtTime(l.date)}</span></div>
         <div class="main"><div class="t">${l.topic}</div></div>
-        ${badge}
+        <div class="flex" style="gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+          ${statusBadge}${cancelBtn}${revertBtn}
+          <button class="btn btn-ghost btn-sm" data-ledit="${l.id}" title="Изменить">✎</button>
+          <button class="btn btn-ghost btn-sm" data-ldel="${l.id}" title="Удалить">🗑</button>
+        </div>
       </div>`;
   }
 
@@ -155,22 +198,35 @@
   }
 
   function hwRow(h) {
-    if (h.status === "done") {
+    if (editing.hw === h.id) {
       return `
-        <div class="row done">
-          <div class="main"><div class="t">${h.title}</div><div class="s">${h.desc}</div></div>
-          <span class="badge ok">сдано</span>
+        <div class="row" style="flex-direction:column; align-items:stretch; gap:8px;">
+          <input class="input" id="he-title" value="${attr(h.title)}" placeholder="Название задания">
+          <input class="input" id="he-desc" value="${attr(h.desc)}" placeholder="Описание">
+          <div class="flex" style="gap:8px; flex-wrap:wrap;">
+            <input class="input" id="he-due" type="datetime-local" value="${toLocalInput(h.due)}" style="width:200px;">
+            <button class="btn btn-primary btn-sm" data-hwsave="${h.id}">Сохранить</button>
+            <button class="btn btn-ghost btn-sm" data-hwcanceledit="1">Отмена</button>
+          </div>
         </div>`;
     }
-    const overdue = new Date(h.due) < new Date();
-    const badge = overdue
-      ? `<span class="badge danger">просрочено</span>`
-      : `<span class="badge warn">до ${fmtDate(h.due)}</span>`;
+    const done = h.status === "done";
+    const overdue = !done && new Date(h.due) < new Date();
+    const badge = done
+      ? `<span class="badge ok">сдано</span>`
+      : overdue ? `<span class="badge danger">просрочено</span>`
+                : `<span class="badge warn">до ${fmtDate(h.due)}</span>`;
+    const toggle = done
+      ? `<button class="btn btn-ghost btn-sm" data-hwreopen="${h.id}" title="Вернуть в работу">↩</button>`
+      : `<button class="btn btn-ghost btn-sm" data-hwdone="${h.id}">Выполнено</button>`;
     return `
-      <div class="row">
+      <div class="row ${done ? "done" : ""}">
         <div class="main"><div class="t">${h.title}</div><div class="s">${h.desc}</div></div>
-        ${badge}
-        <button class="btn btn-ghost btn-sm" data-hwdone="${h.id}">Выполнено</button>
+        <div class="flex" style="gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+          ${badge}${toggle}
+          <button class="btn btn-ghost btn-sm" data-hwedit="${h.id}" title="Изменить">✎</button>
+          <button class="btn btn-ghost btn-sm" data-hwdel="${h.id}" title="Удалить">🗑</button>
+        </div>
       </div>`;
   }
 
@@ -204,9 +260,57 @@
     document.querySelectorAll("[data-done]").forEach(b =>
       b.addEventListener("click", async () => { await api.markLessonDone(b.dataset.done); render(); }));
 
-    // отметить домашку выполненной
+    // --- уроки: редактирование/отмена/возврат/удаление ---
+    document.querySelectorAll("[data-ledit]").forEach(b =>
+      b.addEventListener("click", () => { editing.lesson = b.dataset.ledit; renderDetail(); }));
+    document.querySelector("[data-lcanceledit]")
+      ?.addEventListener("click", () => { editing.lesson = null; renderDetail(); });
+    document.querySelector("[data-lsave]")?.addEventListener("click", async (e) => {
+      const id = e.currentTarget.dataset.lsave;
+      const topic = document.getElementById("le-topic").value.trim();
+      const date  = document.getElementById("le-date").value;
+      if (!topic || !date) return;
+      await api.updateLesson(id, { topic, date: new Date(date).toISOString() });
+      editing.lesson = null; render();
+    });
+    document.querySelectorAll("[data-lcancel]").forEach(b =>
+      b.addEventListener("click", async () => { await api.setLessonStatus(b.dataset.lcancel, "canceled"); render(); }));
+    document.querySelectorAll("[data-lrevert]").forEach(b =>
+      b.addEventListener("click", async () => { await api.setLessonStatus(b.dataset.lrevert, "scheduled"); render(); }));
+    document.querySelectorAll("[data-ldel]").forEach(b =>
+      b.addEventListener("click", async () => { if (confirm("Удалить урок?")) { await api.deleteLesson(b.dataset.ldel); render(); } }));
+
+    // --- домашки: выполнено/вернуть/редактирование/удаление ---
     document.querySelectorAll("[data-hwdone]").forEach(b =>
       b.addEventListener("click", async () => { await api.markHomeworkDone(b.dataset.hwdone); render(); }));
+    document.querySelectorAll("[data-hwreopen]").forEach(b =>
+      b.addEventListener("click", async () => { await api.setHomeworkStatus(b.dataset.hwreopen, "open"); render(); }));
+    document.querySelectorAll("[data-hwedit]").forEach(b =>
+      b.addEventListener("click", () => { editing.hw = b.dataset.hwedit; renderDetail(); }));
+    document.querySelector("[data-hwcanceledit]")
+      ?.addEventListener("click", () => { editing.hw = null; renderDetail(); });
+    document.querySelector("[data-hwsave]")?.addEventListener("click", async (e) => {
+      const id = e.currentTarget.dataset.hwsave;
+      const title = document.getElementById("he-title").value.trim();
+      const desc  = document.getElementById("he-desc").value.trim();
+      const due   = document.getElementById("he-due").value;
+      if (!title || !due) return;
+      await api.updateHomework(id, { title, desc, due: new Date(due).toISOString() });
+      editing.hw = null; render();
+    });
+    document.querySelectorAll("[data-hwdel]").forEach(b =>
+      b.addEventListener("click", async () => { if (confirm("Удалить домашнее задание?")) { await api.deleteHomework(b.dataset.hwdel); render(); } }));
+
+    // --- ученик: редактирование имени/курса ---
+    document.getElementById("s-edit")?.addEventListener("click", () => { editing.student = true; renderDetail(); });
+    document.getElementById("se-canceledit")?.addEventListener("click", () => { editing.student = false; renderDetail(); });
+    document.getElementById("se-save")?.addEventListener("click", async () => {
+      const name   = document.getElementById("se-name").value.trim();
+      const course = document.getElementById("se-course").value.trim();
+      if (!name) return;
+      await api.updateStudent(selectedId, { name, course: course || "Программирование" });
+      editing.student = false; render();
+    });
 
     // добавить урок
     document.getElementById("l-add").addEventListener("click", async () => {
@@ -314,6 +418,7 @@
         ["n-name", "n-course", "n-login", "n-pass"].forEach(id => document.getElementById(id).value = "");
         parentPreview.textContent = "—";
         selectedId = res.id;
+        resetEditing();
         render();
       } catch (ex) { err.textContent = ex.message; }
     });

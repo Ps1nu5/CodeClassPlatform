@@ -130,6 +130,34 @@ const api = (() => {
       saveDB(db);
     },
 
+    // ---- редактирование/удаление ----
+    async updateStudent(id, fields) {
+      const db = loadDB(); const s = db.students.find(x => x.id === id);
+      if (s) { Object.assign(s, fields); saveDB(db); } return s;
+    },
+    async updateLesson(id, fields) {
+      const db = loadDB(); const l = db.lessons.find(x => x.id === id);
+      if (l) { Object.assign(l, fields); saveDB(db); }
+    },
+    async deleteLesson(id) {
+      const db = loadDB(); db.lessons = db.lessons.filter(x => x.id !== id); saveDB(db);
+    },
+    async setLessonStatus(id, status) {
+      const db = loadDB(); const l = db.lessons.find(x => x.id === id);
+      if (l) { l.status = status; saveDB(db); }
+    },
+    async updateHomework(id, fields) {
+      const db = loadDB(); const h = db.homeworks.find(x => x.id === id);
+      if (h) { Object.assign(h, fields); saveDB(db); }
+    },
+    async deleteHomework(id) {
+      const db = loadDB(); db.homeworks = db.homeworks.filter(x => x.id !== id); saveDB(db);
+    },
+    async setHomeworkStatus(id, status) {
+      const db = loadDB(); const h = db.homeworks.find(x => x.id === id);
+      if (h) { h.status = status; saveDB(db); }
+    },
+
     // Локальный черновик ОС без нейронки (мок-режим).
     async generateFeedback(scores) {
       const s = scores || {};
@@ -283,6 +311,39 @@ const api = (() => {
       }
       if (data && data.error) throw new Error(data.error);
       return data;
+    },
+
+    // ---- редактирование/удаление (запись разрешена только админу через RLS) ----
+    async updateStudent(id, fields) {
+      const patch = {};
+      if (fields.name   !== undefined) patch.name   = fields.name;
+      if (fields.course !== undefined) patch.course = fields.course;
+      const { error } = await sb.from("students").update(patch).eq("id", id); must(error);
+    },
+    async updateLesson(id, fields) {
+      const patch = {};
+      if (fields.topic !== undefined) patch.topic = fields.topic;
+      if (fields.date  !== undefined) patch.date  = fields.date;
+      const { error } = await sb.from("lessons").update(patch).eq("id", id); must(error);
+    },
+    async deleteLesson(id) {
+      const { error } = await sb.from("lessons").delete().eq("id", id); must(error);
+    },
+    async setLessonStatus(id, status) {
+      const { error } = await sb.from("lessons").update({ status }).eq("id", id); must(error);
+    },
+    async updateHomework(id, fields) {
+      const patch = {};
+      if (fields.title !== undefined) patch.title       = fields.title;
+      if (fields.desc  !== undefined) patch.description = fields.desc;
+      if (fields.due   !== undefined) patch.due         = fields.due;
+      const { error } = await sb.from("homeworks").update(patch).eq("id", id); must(error);
+    },
+    async deleteHomework(id) {
+      const { error } = await sb.from("homeworks").delete().eq("id", id); must(error);
+    },
+    async setHomeworkStatus(id, status) {
+      const { error } = await sb.from("homeworks").update({ status }).eq("id", id); must(error);
     },
   };
 
