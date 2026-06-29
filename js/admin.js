@@ -2,8 +2,8 @@
    Админка преподавателя.
    ============================================================ */
 
-(function () {
-  const user = requireRole(["admin"]);
+(async function () {
+  const user = await requireRole(["admin"]);
   if (!user) return;
   renderUserChip(document.getElementById("userchip"), user);
 

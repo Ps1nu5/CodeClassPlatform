@@ -39,6 +39,9 @@ const api = (() => {
       return user;
     },
 
+    // В мок-режиме серверной сессии нет — ориентируемся на локальный снимок.
+    async ensureSession() { return getSession(); },
+
     async getStudent(studentId) {
       const db = loadDB();
       return db.students.find(s => s.id === studentId) || null;
@@ -160,6 +163,15 @@ const api = (() => {
       const user = { login, role: prof.role, name: prof.name, studentId: prof.student_id };
       setSession(user);
       return user;
+    },
+
+    // Гарантируем живую сессию: getSession в supabase-js v2 сам обновляет
+    // просроченный access-token по refresh-токену. Возвращает session или null.
+    async ensureSession() {
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        return session || null;
+      } catch { return null; }
     },
 
     async getStudent(studentId) {

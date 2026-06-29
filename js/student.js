@@ -3,7 +3,7 @@
    ============================================================ */
 
 (async function () {
-  const user = requireRole(["student"]);
+  const user = await requireRole(["student"]);
   if (!user) return;
 
   renderUserChip(document.getElementById("userchip"), user);

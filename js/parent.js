@@ -4,7 +4,7 @@
    ============================================================ */
 
 (async function () {
-  const user = requireRole(["parent"]);
+  const user = await requireRole(["parent"]);
   if (!user) return;
   renderUserChip(document.getElementById("userchip"), user);
 

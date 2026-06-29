@@ -9,11 +9,15 @@ const ROLE_HOME = {
   student: "student.html",
 };
 
-// Защита страницы: вызвать вверху каждого кабинета.
+// Защита страницы: вызвать вверху каждого кабинета через await.
 // allowed — массив ролей, которым можно сюда.
-function requireRole(allowed) {
+async function requireRole(allowed) {
   const user = api.getSession();
   if (!user) { location.replace("index.html"); return null; }
+  // Серверная сессия могла протухнуть (напр. вкладка спала ночь) — проверяем
+  // и при необходимости обновляем токен. Если её нет — на вход, а не «не найдено».
+  const session = await api.ensureSession();
+  if (!session) { api.clearSession(); location.replace("index.html"); return null; }
   if (!allowed.includes(user.role)) { location.replace(ROLE_HOME[user.role] || "index.html"); return null; }
   return user;
 }
