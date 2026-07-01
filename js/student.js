@@ -8,9 +8,12 @@
 
   renderUserChip(document.getElementById("userchip"), user);
 
-  const student   = await api.getStudent(user.studentId);
-  const lessons   = await api.getLessons(user.studentId);
-  const homeworks = await api.getHomeworks(user.studentId);
+  // параллельно — иначе на дальнем маршруте через прокси 3 запроса подряд тормозят
+  const [student, lessons, homeworks] = await Promise.all([
+    api.getStudent(user.studentId),
+    api.getLessons(user.studentId),
+    api.getHomeworks(user.studentId),
+  ]);
 
   if (!student) { document.getElementById("hello").textContent = "Ученик не найден"; return; }
 

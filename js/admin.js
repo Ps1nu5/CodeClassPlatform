@@ -47,12 +47,16 @@
     const box = document.getElementById("detail");
     if (!selectedId) { box.innerHTML = `<div class="card"><p class="muted mb-0">Выберите ученика слева или создайте нового.</p></div>`; return; }
 
-    const s = await api.getStudent(selectedId);
+    // параллельно — чтобы деталь ученика не грузилась 5 запросами подряд
+    const [s, lessons, homeworks, feedback, logins] = await Promise.all([
+      api.getStudent(selectedId),
+      api.getLessons(selectedId),
+      api.getHomeworks(selectedId),
+      api.getFeedback(selectedId),
+      api.getLogins(selectedId),
+    ]);
     if (!s) { selectedId = null; return renderDetail(); }
-    const lessons   = await api.getLessons(selectedId);
-    const homeworks = await api.getHomeworks(selectedId);
-    const feedback  = await api.getFeedback(selectedId);
-    const { studentLogin, parentLogin } = await api.getLogins(selectedId);
+    const { studentLogin, parentLogin } = logins;
     const used = api.lessonsUsed(lessons);
     const left = Math.max(0, s.lessonsPaid - used);
 
